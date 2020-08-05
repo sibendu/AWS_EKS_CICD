@@ -1,0 +1,64 @@
+version: 0.2
+
+#env:
+  #variables:
+     # key: "value"
+     # key: "value"
+  #parameter-store:
+     # key: "value"
+     # key: "value"
+  #secrets-manager:
+     # key: secret-id:json-key:version-stage:version-id
+     # key: secret-id:json-key:version-stage:version-id
+  #exported-variables:
+     # - variable
+     # - variable
+  #git-credential-helper: yes
+phases:
+  #install:
+    #If you use the Ubuntu standard image 2.0 or later, you must specify runtime-versions.
+    #If you specify runtime-versions and use an image other than Ubuntu standard image 2.0, the build fails.
+    #runtime-versions:
+      # name: version
+      # name: version
+    #commands:
+      # - command
+      # - command
+  pre_build:
+    commands:
+      - aws sts get-caller-identity
+      - aws eks update-kubeconfig --name eks-digital --region $AWS_REGION 
+      # Sibendu: 
+      # IAM role codebuild-eks-role below must be added to ConfigMap aws-auth in EKS 
+      # Rememember: it does not work if arn:aws:iam::$AWS_ACCOUNT_ID:role/service-role/codebuild-eks-role; the path must not service-role be there) 
+      # https://github.com/kubernetes-sigs/aws-iam-authenticator/issues/268
+      - aws eks update-kubeconfig --name eks-digital --region $AWS_REGION --role-arn arn:aws:iam::$AWS_ACCOUNT_ID:role/service-role/codebuild-eks-role
+      - kubectl get nodes
+  build:
+    commands:
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin 729524366783.dkr.ecr.$AWS_REGION.amazonaws.com
+      #- docker login -u AWS -p $(aws ecr get-login-password --region $AWS_REGION) 729524366783.dkr.ecr.$AWS_REGION.amazonaws.com
+      - docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_DOCKER_IMAGE:$AWS_DOCKER_TAG . 
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_DOCKER_IMAGE:$AWS_DOCKER_TAG
+  post_build:
+    commands:
+      - kubectl apply -f deploy.yaml
+      # - command
+#reports:
+  #report-name-or-arn:
+    #files:
+      # - location
+      # - location
+    #base-directory: location
+    #discard-paths: yes
+    #file-format: JunitXml | CucumberJson
+#artifacts:
+  #files:
+    # - location
+    # - location
+  #name: $(date +%Y-%m-%d)
+  #discard-paths: yes
+  #base-directory: location
+#cache:
+  #paths:
+    # - paths
