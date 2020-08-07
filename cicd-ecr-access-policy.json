@@ -7,5 +7,5 @@
             "Action": "ecr:*",
             "Resource": "*"
         }
-    ]
+    ] 
 }

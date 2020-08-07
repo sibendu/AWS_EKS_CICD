@@ -7,5 +7,5 @@
             "Action": "eks:DescribeCluster",
             "Resource": "*"
         }
-    ]
+    ] 
 }
